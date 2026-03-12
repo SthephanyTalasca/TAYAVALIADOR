@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Avaliador de Reuniões CS</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #F7F5F0;
+    --surface: #FFFFFF;
+    --surface2: #F0EDE6;
+    --text: #1C1A17;
+    --text2: #6B6760;
+    --text3: #A09D98;
+    --accent: #C4552A;
+    --accent-light: #FAECE7;
+    --accent-text: #993C1D;
+    --green: #3B6D11;
+    --green-light: #EAF3DE;
+    --amber: #854F0B;
+    --amber-light: #FAEEDA;
+    --border: rgba(28,26,23,0.1);
+    --border2: rgba(28,26,23,0.06);
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  .layout {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem 5rem;
+  }
+
+  header {
+    margin-bottom: 2.5rem;
+  }
+
+  .tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent-text);
+    background: var(--accent-light);
+    padding: 4px 10px;
+    border-radius: 100px;
+    margin-bottom: 1rem;
+  }
+
+  h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2.2rem;
+    font-weight: 400;
+    line-height: 1.2;
+    color: var(--text);
+    margin-bottom: 0.5rem;
+  }
+
+  h1 em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .subtitle {
+    color: var(--text2);
+    font-size: 14px;
+    font-weight: 300;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .card-label {
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 0.75rem;
+  }
+
+  textarea {
+    width: 100%;
+    min-height: 180px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 300;
+    color: var(--text);
+    background: var(--surface2);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.875rem 1rem;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.2s;
+    line-height: 1.6;
+  }
+
+  textarea::placeholder { color: var(--text3); }
+  textarea:focus { border-color: rgba(196,85,42,0.4); }
+
+  .meta-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .meta-field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 6px;
+  }
+
+  .meta-field input, .meta-field select {
+    width: 100%;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: var(--text);
+    background: var(--surface2);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .meta-field input:focus, .meta-field select:focus { border-color: rgba(196,85,42,0.4); }
+
+  .btn-analyze {
+    width: 100%;
+    padding: 0.875rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    color: #FFFFFF;
+    background: var(--accent);
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+    letter-spacing: 0.01em;
+  }
+
+  .btn-analyze:hover { opacity: 0.9; }
+  .btn-analyze:active { transform: scale(0.99); }
+  .btn-analyze:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  #results { display: none; margin-top: 1.5rem; }
+
+  .score-block {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 1rem;
+  }
+
+  .score-circle {
+    flex-shrink: 0;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent-light);
+    border: 2px solid var(--accent);
+  }
+
+  .score-num {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2rem;
+    line-height: 1;
+    color: var(--accent);
+  }
+
+  .score-den {
+    font-size: 11px;
+    color: var(--accent-text);
+    font-weight: 500;
+  }
+
+  .score-info h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.3rem;
+    font-weight: 400;
+    margin-bottom: 4px;
+  }
+
+  .score-info p {
+    font-size: 13px;
+    color: var(--text2);
+    font-weight: 300;
+  }
+
+  .dims-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .dim-card {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 1rem 1.1rem;
+  }
+
+  .dim-label {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 6px;
+  }
+
+  .dim-bar-wrap {
+    height: 4px;
+    background: var(--border2);
+    border-radius: 100px;
+    margin-bottom: 6px;
+    overflow: hidden;
+  }
+
+  .dim-bar {
+    height: 100%;
+    border-radius: 100px;
+    background: var(--accent);
+    transition: width 0.8s ease;
+  }
+
+  .dim-score {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  .section-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.1rem;
+    font-weight: 400;
+    margin-bottom: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .dot-green { background: var(--green); }
+  .dot-amber { background: var(--amber); }
+  .dot-accent { background: var(--accent); }
+
+  .list-items {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .list-items li {
+    font-size: 14px;
+    font-weight: 300;
+    color: var(--text);
+    padding: 0.625rem 1rem;
+    border-radius: var(--radius-sm);
+    border-left: 2px solid;
+    line-height: 1.5;
+  }
+
+  .li-green { background: var(--green-light); border-color: var(--green); }
+  .li-amber { background: var(--amber-light); border-color: var(--amber); }
+  .li-accent { background: var(--accent-light); border-color: var(--accent); }
+
+  .loading-state {
+    display: none;
+    text-align: center;
+    padding: 2rem;
+    color: var(--text2);
+    font-size: 14px;
+    font-weight: 300;
+  }
+
+  .spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 8px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .error-box {
+    display: none;
+    background: #FCEBEB;
+    border: 0.5px solid #F09595;
+    border-radius: var(--radius-sm);
+    padding: 0.875rem 1rem;
+    font-size: 13px;
+    color: #791F1F;
+    margin-top: 0.75rem;
+  }
+
+  .divider {
+    height: 0.5px;
+    background: var(--border2);
+    margin: 1.25rem 0;
+  }
+
+  .sections-col { display: flex; flex-direction: column; gap: 1rem; }
+
+  footer {
+    margin-top: 3rem;
+    text-align: center;
+    font-size: 12px;
+    color: var(--text3);
+    font-weight: 300;
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+  <header>
+    <div class="tag">Customer Success</div>
+    <h1>Avalie sua <em>reunião</em></h1>
+    <p class="subtitle">Cole a transcrição do Gemini e receba uma análise completa da sua reunião com o cliente.</p>
+  </header>
+
+  <div class="card">
+    <div class="card-label">Informações da reunião</div>
+    <div class="meta-row">
+      <div class="meta-field">
+        <label>Nome do cliente</label>
+        <input type="text" id="client-name" placeholder="Ex: Empresa XYZ" />
+      </div>
+      <div class="meta-field">
+        <label>Objetivo da reunião</label>
+        <input type="text" id="meeting-goal" placeholder="Ex: QBR, onboarding, check-in..." />
+      </div>
+    </div>
+    <div class="card-label">Transcrição ou resumo do Gemini</div>
+    <textarea id="transcript" placeholder="Cole aqui a transcrição ou resumo gerado pelo Gemini da sua reunião..."></textarea>
+    <div id="error-box" class="error-box"></div>
+  </div>
+
+  <button class="btn-analyze" id="btn-analyze" onclick="analyzeSession()">
+    Analisar reunião
+  </button>
+
+  <div class="loading-state" id="loading">
+    <div class="spinner"></div>
+    <p>Analisando sua reunião...</p>
+  </div>
+
+  <div id="results">
+    <div class="score-block" id="score-block">
+      <div class="score-circle">
+        <span class="score-num" id="score-num">—</span>
+        <span class="score-den">/10</span>
+      </div>
+      <div class="score-info">
+        <h2 id="score-label">Avaliação geral</h2>
+        <p id="score-desc"></p>
+      </div>
+    </div>
+
+    <div class="dims-grid">
+      <div class="dim-card">
+        <div class="dim-label">Qualidade da conversa</div>
+        <div class="dim-bar-wrap"><div class="dim-bar" id="bar-quality" style="width:0%"></div></div>
+        <div class="dim-score" id="score-quality">—</div>
+      </div>
+      <div class="dim-card">
+        <div class="dim-label">Próximos passos</div>
+        <div class="dim-bar-wrap"><div class="dim-bar" id="bar-nextsteps" style="width:0%"></div></div>
+        <div class="dim-score" id="score-nextsteps">—</div>
+      </div>
+      <div class="dim-card">
+        <div class="dim-label">Sentimento do cliente</div>
+        <div class="dim-bar-wrap"><div class="dim-bar" id="bar-sentiment" style="width:0%"></div></div>
+        <div class="dim-score" id="score-sentiment">—</div>
+      </div>
+      <div class="dim-card">
+        <div class="dim-label">Objetivos cumpridos</div>
+        <div class="dim-bar-wrap"><div class="dim-bar" id="bar-objectives" style="width:0%"></div></div>
+        <div class="dim-score" id="score-objectives">—</div>
+      </div>
+    </div>
+
+    <div class="sections-col">
+      <div class="card">
+        <div class="section-title"><span class="dot dot-green"></span> Pontos fortes</div>
+        <ul class="list-items" id="list-strengths"></ul>
+      </div>
+      <div class="card">
+        <div class="section-title"><span class="dot dot-amber"></span> Pontos de atenção</div>
+        <ul class="list-items" id="list-weaknesses"></ul>
+      </div>
+      <div class="card">
+        <div class="section-title"><span class="dot dot-accent"></span> Sugestões de melhoria</div>
+        <ul class="list-items" id="list-suggestions"></ul>
+      </div>
+    </div>
+  </div>
+
+  <footer>Feito para analistas de Customer Success · Powered by Claude</footer>
+</div>
+
+<script>
+async function analyzeSession() {
+  const transcript = document.getElementById('transcript').value.trim();
+  const clientName = document.getElementById('client-name').value.trim();
+  const goal = document.getElementById('meeting-goal').value.trim();
+  const errorBox = document.getElementById('error-box');
+
+  errorBox.style.display = 'none';
+
+  if (!transcript) {
+    errorBox.textContent = 'Por favor, cole a transcrição ou resumo da reunião antes de analisar.';
+    errorBox.style.display = 'block';
+    return;
+  }
+
+  document.getElementById('btn-analyze').disabled = true;
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('results').style.display = 'none';
+
+  const systemPrompt = `Você é um especialista em Customer Success que analisa reuniões com clientes. 
+Seu papel é avaliar a performance do analista de CS com base na transcrição ou resumo da reunião.
+Seja honesto, construtivo e específico. Foque em comportamentos observáveis.
+
+Retorne SOMENTE um JSON válido, sem nenhum texto antes ou depois, sem markdown, sem backticks. 
+Formato exato:
+{
+  "nota_geral": <número de 0 a 10>,
+  "label": "<adjetivo que resume a reunião em 2-3 palavras>",
+  "descricao_geral": "<1 frase resumindo o desempenho geral>",
+  "dimensoes": {
+    "qualidade_conversa": <0-10>,
+    "proximos_passos": <0-10>,
+    "sentimento_cliente": <0-10>,
+    "objetivos_cumpridos": <0-10>
+  },
+  "pontos_fortes": ["<ponto 1>", "<ponto 2>", "<ponto 3>"],
+  "pontos_atencao": ["<ponto 1>", "<ponto 2>"],
+  "sugestoes": ["<sugestão 1>", "<sugestão 2>", "<sugestão 3>"]
+}`;
+
+  const userPrompt = `${clientName ? `Cliente: ${clientName}\n` : ''}${goal ? `Objetivo da reunião: ${goal}\n` : ''}
+Transcrição/Resumo:
+${transcript}
+
+Analise esta reunião e retorne o JSON de avaliação conforme instruído.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userPrompt }]
+      })
+    });
+
+    const data = await res.json();
+
+    if (data.error) throw new Error(data.error.message || 'Erro da API');
+
+    const rawText = data.content[0].text.trim();
+    const cleaned = rawText.replace(/```json|```/g, '').trim();
+    const result = JSON.parse(cleaned);
+
+    renderResults(result);
+  } catch (err) {
+    errorBox.textContent = 'Algo deu errado ao analisar a reunião. Tente novamente. (' + err.message + ')';
+    errorBox.style.display = 'block';
+  } finally {
+    document.getElementById('btn-analyze').disabled = false;
+    document.getElementById('loading').style.display = 'none';
+  }
+}
+
+function renderResults(r) {
+  document.getElementById('score-num').textContent = r.nota_geral;
+  document.getElementById('score-label').textContent = r.label || 'Avaliação geral';
+  document.getElementById('score-desc').textContent = r.descricao_geral || '';
+
+  const dims = r.dimensoes;
+  setDim('quality', dims.qualidade_conversa);
+  setDim('nextsteps', dims.proximos_passos);
+  setDim('sentiment', dims.sentimento_cliente);
+  setDim('objectives', dims.objetivos_cumpridos);
+
+  renderList('list-strengths', r.pontos_fortes, 'li-green');
+  renderList('list-weaknesses', r.pontos_atencao, 'li-amber');
+  renderList('list-suggestions', r.sugestoes, 'li-accent');
+
+  const results = document.getElementById('results');
+  results.style.display = 'block';
+  setTimeout(() => {
+    results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 100);
+
+  setTimeout(() => {
+    setBarWidth('bar-quality', dims.qualidade_conversa);
+    setBarWidth('bar-nextsteps', dims.proximos_passos);
+    setBarWidth('bar-sentiment', dims.sentimento_cliente);
+    setBarWidth('bar-objectives', dims.objetivos_cumpridos);
+  }, 200);
+}
+
+function setDim(key, value) {
+  document.getElementById('score-' + key).textContent = value + '/10';
+}
+
+function setBarWidth(id, value) {
+  document.getElementById(id).style.width = (value * 10) + '%';
+}
+
+function renderList(id, items, cls) {
+  const ul = document.getElementById(id);
+  ul.innerHTML = '';
+  (items || []).forEach(item => {
+    const li = document.createElement('li');
+    li.className = cls;
+    li.textContent = item;
+    ul.appendChild(li);
+  });
+}
+</script>
+</body>
+</html>
